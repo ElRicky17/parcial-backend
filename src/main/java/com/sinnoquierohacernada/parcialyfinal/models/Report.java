@@ -2,25 +2,35 @@ package com.sinnoquierohacernada.parcialyfinal.models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "reports")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Report {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
-    private String content;  // el mensaje del reporte
+    @Column(nullable = false, length = 1000)
+    private String message;
 
-    private boolean anonymous = false;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private boolean anonymous;
 
-    // Relación opcional con el usuario que lo envía (para Daemons)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User submittedBy;
+    private User user;  // Esto SÍ se serializará, pero sin los reports del usuario
 }

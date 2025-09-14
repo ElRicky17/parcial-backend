@@ -2,9 +2,12 @@ package com.sinnoquierohacernada.parcialyfinal.dao;
 
 import com.sinnoquierohacernada.parcialyfinal.models.Report;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface ReportRepository extends JpaRepository<Report, Long> {
-    List<Report> findBySubmittedById(Long userId);
+@Repository
+public interface ReportRepository extends JpaRepository<Report, UUID> {
+    List<Report> findByUserId(UUID userId);
 }

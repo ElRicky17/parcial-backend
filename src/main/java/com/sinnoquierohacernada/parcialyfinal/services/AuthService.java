@@ -9,16 +9,14 @@ import com.sinnoquierohacernada.parcialyfinal.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+
 
     public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -38,39 +36,48 @@ public class AuthService {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setRole(user.getRole().name());
+        response.setUserId(user.getId());
         return response;
     }
 
     public User registerUser(String email, String password, Role role) {
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            User user = new User();
+            user.setEmail(email);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setRole(role);
+
+            return userRepository.save(user);
+        } else {
             throw new RuntimeException("El usuario ya existe");
         }
 
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setRole(role);
+    }
+    public User updateUser(UUID userId, String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (roleName != null && !roleName.isBlank()) {
+            try {
+                Role newRole = Role.valueOf(roleName.trim().toUpperCase());
+                user.setRole(newRole);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Rol inválido: " + roleName);
+            }
+        }
 
         return userRepository.save(user);
+    }
+
+    public void deleteUser(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+        userRepository.deleteById(userId);
     }
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
-    public String assignRewardOrPunishment(Long daemonId, String action) {
-        // lógica simplificada
-        Optional<User> daemon = userRepository.findById(daemonId);
-        if (daemon.isEmpty() || daemon.get().getRole() != Role.DAEMON) {
-            return "El usuario no es un Daemon válido";
-        }
-        return "Daemon " + daemonId + " recibió: " + action;
-    }
 
-    public Map<String, Object> getDaemonStats(Long daemonId) {
-        // lógica simplificada
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("daemonId", daemonId);
-        stats.put("missionsCompleted", 5);
-        stats.put("reportsSubmitted", 3);
-        return stats;
-    }
+
 }
